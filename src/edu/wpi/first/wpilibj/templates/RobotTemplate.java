@@ -45,8 +45,9 @@ public class RobotTemplate extends IterativeRobot {
     Encoder enY = new Encoder(3,4);
     private double initialHeading;
     
-    double p = 0;
+    double p = 1;
     double d = 0;
+    double diff = 0;
     int startHeading;
     
     Timer time;
@@ -299,6 +300,7 @@ public class RobotTemplate extends IterativeRobot {
     
     void turnToRight(){ 
         double right = initialHeading -90;
+        if (getCAngle() != right){
         double theta = getCAngle() - right;
         double pRate = p * theta;
         
@@ -324,6 +326,16 @@ public class RobotTemplate extends IterativeRobot {
                 lb /= max;
                 rb /= max;
             }
+         try{
+            jaglf.setX(lf);
+            jagrf.setX(rf);
+            jaglb.setX(lb);
+            jagrb.setX(rb);
+        } catch (CANTimeoutException ex) {
+            ex.printStackTrace();
+        }
+         diff -= theta;
+        }
         
     }
 }
