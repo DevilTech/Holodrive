@@ -35,19 +35,19 @@ public class I2CAxisSensors {
     }
     
     public double getAccelX() {
-        
+        return 1;
     }
     
     public double getAccelY() {
-        
+        return 1;
     }
     
     public double getCompX() {
-        
+        return 1;
     }
     
     public double getCompY() {
-        
+        return 1;
     }
     
     void setupCompass() {

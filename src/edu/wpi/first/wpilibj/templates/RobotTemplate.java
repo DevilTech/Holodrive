@@ -24,10 +24,10 @@ public class RobotTemplate extends IterativeRobot {
     private I2C awrite;
     private I2C aread;
     private ADXL345_I2C ac;
-    private int bl;
+    private int bc;
     private int bg;
     private int ba;
-    private byte buff[];
+    private byte buffc[];
     private byte buffg[];
     private byte buffa[];
     public double longestwheel = 3.83 * 37 / 100;
@@ -44,45 +44,67 @@ public class RobotTemplate extends IterativeRobot {
     Encoder enX = new Encoder(1,2);
     Encoder enY = new Encoder(3,4);
     private double initialHeading;
+    double theta;
+    double theta90;
+    double theta180;
+    double theta270;
+    boolean FCMode = true ;
+    double forward;
+    double clockwise;
+    double right;
+    double temp;
+    
+    double PY = 1;
+    double PX = 1;
+    double PR = 1;
+    double DY = 1;
+    double DX = 1;
     
     double p = 1;
     double d = 0;
     double diff = 0;
-    int startHeading;
     
     Timer time;
 
     public void robotInit() {
-        
-        bl = 6;
-        bg = 2;
-        ba = 6;
-        
-        buff = new byte[bl];
-        buffg =  new byte[bg];
-        buffa = new byte[ba];
-        
-        setupCompass();
-        setupGyro();
-        setupAccel();
-        setupPots();
-        
-        time = new Timer(); 
-        time.start();
-        
-        try {
+        try {         
+            bc = 6;
+            bg = 6;
+            ba = 6;
+            
+            buffc = new byte[bc];
+            buffg =  new byte[bg];
+            buffa = new byte[ba];
+            
+            setupCompass();
+            setupGyro();
+            setupAccel();
+            setupPots();
+            
+            time = new Timer(); 
+            time.start();
+            
             jaglf = new CANJaguar(2);
             jagrf = new CANJaguar(3);
             jaglb = new CANJaguar(12);
             jagrb = new CANJaguar(13);
-        } catch (CANTimeoutException ex) {
+            
+            joy = new Joystick(1);
+            gread.read(33, bg, buffg);
+            initialHeading = getCAngle();
+            
+            jaglf.setVoltageRampRate(11);
+            jagrf.setVoltageRampRate(11);
+            jaglb.setVoltageRampRate(11);
+            jagrb.setVoltageRampRate(11);
+            jaglf.configMaxOutputVoltage(12);
+            jagrf.configMaxOutputVoltage(12);
+            jaglb.configMaxOutputVoltage(12);
+            jagrb.configMaxOutputVoltage(12);
+            
+            } catch (CANTimeoutException ex) {
             ex.printStackTrace();
         }
-
-        joy = new Joystick(1);
-        gread.read(33, bg, buffg);
-        startHeading = byteCombo(buffg[0], buffg[1]);
-        initialHeading = getCAngle();
     }
 
     public void autonomousPeriodic() {
@@ -90,28 +112,158 @@ public class RobotTemplate extends IterativeRobot {
     }
 
     public void teleopPeriodic() {
-        cread.read(3, bl, buff);
-        gread.read(33, bg, buffg);
-        aread.read(50, ba, buffa);
-        for(int i = 0; i < 6; i += 2) {
-            if(byteCombo(buff[i], buff[i+1]) == -4096) {
-                System.out.println("OVERFLOW  ");
-            } else {
-                switch(i) {
-                    case 0: System.out.print("x: " + getCX() + " "); break;
-                    case 1: System.out.print("  "); break;
-                    case 4: System.out.print("y: " + getCY() + " "); break;
-                    case 5: System.out.print("  "); break;
-                }
-            }
-        }
-        System.out.print("atan: " + getCAngle());
-        System.out.print("Encoder: " + enX.getDistance());
-        System.out.println("");
-        holoSensor();
+        //sensorTest();
+        sensorPrint();
+//        cread.read(3, bl, buff);
+//        gread.read(33, bg, buffg);
+//        aread.read(50, ba, buffa);
+//        for(int i = 0; i < 6; i += 2) {
+//            if(byteCombo(buff[i], buff[i+1]) == -4096) {
+//                System.out.println("OVERFLOW  ");
+//            } else {
+//                switch(i) {
+//                    case 0: System.out.print("x: " + getCX() + " "); break;
+//                    case 1: System.out.print("  "); break;
+//                    case 4: System.out.print("y: " + getCY() + " "); break;
+//                    case 5: System.out.print("  "); break;
+//                }
+//            }
+//        }
+//        System.out.print("atan: " + getCAngle());
+//        System.out.print("Encoder: " + enX.getDistance());
+//        System.out.println("");
+//        holoSensor();
     }
 
     public void testPeriodic() {
+    }
+    public void teleopInit()
+    {
+        time.reset();
+    }
+    
+    public void sensorPrint(){
+        readAll();
+        cread.read(10, 1, buffc);
+        //System.out.println(getGAngle() + ", " + getCAngle() + ", " + enY.getRate() + ", " + enX.getRate());
+        System.out.println(buffc[0]);
+    }
+    public void sensorTest()
+    {
+        if (time.get() < 3)
+        {
+            try 
+            {
+                //for x
+                    jaglf.setX(1,(byte)1);
+                    jagrf.setX(-1,(byte)1);
+                    jaglb.setX(1,(byte)1);
+                    jagrb.setX(-1,(byte)1);
+                    CANJaguar.updateSyncGroup((byte)1);
+                readAll();
+                System.out.println(time.get() + "," + getGZ() + "," + getCAngle() + "," + enX.getRate());
+            } catch (CANTimeoutException ex) 
+                {
+                    ex.printStackTrace();
+                }
+            }else if (time.get() < 7){
+                 try 
+            {
+                //for x
+                    jaglf.setX(-1,(byte)1);
+                    jagrf.setX(1,(byte)1);
+                    jaglb.setX(-1,(byte)1);
+                    jagrb.setX(1,(byte)1);
+                    CANJaguar.updateSyncGroup((byte)1);
+                readAll();
+                //label for things
+                System.out.println(time.get() + "," + getGZ() + "," + getCAngle()+ "," + enX.getRate());
+            } catch (CANTimeoutException ex) 
+                {
+                    ex.printStackTrace();
+                }
+            }else{
+            try 
+            {
+                   jaglf.setX(0);
+                   jagrf.setX(0);
+                   jaglb.setX(0);
+                   jagrb.setX(0);
+            } catch (CANTimeoutException ex) 
+            {
+                ex.printStackTrace();
+            }
+        }
+
+    }
+    
+    public void chassisSetup(){
+        theta90 = (initialHeading > Math.PI/2) ? (initialHeading - 3*Math.PI/2) : initialHeading + Math.PI/2;
+        theta180 = (initialHeading > 0) ? (initialHeading - Math.PI) : (initialHeading + Math.PI);
+        theta270 = (initialHeading < Math.PI/2) ? (initialHeading - Math.PI) : (initialHeading + Math.PI);
+    }
+    
+    public void getInput(){
+        if (joy.getRawButton(1)){
+            FCMode = true;
+        } else if(joy.getRawButton(2)) {
+            FCMode = false;
+        }
+        
+        theta = getCRAngle();
+        forward = -joy.getY() * Math.abs(joy.getY());
+        right = joy.getX() * Math.abs(joy.getX());
+        if(Math.abs(joy.getRawAxis(4)) > .1) {
+            clockwise = joy.getRawAxis(4)*Math.abs(joy.getRawAxis(4));
+            theta = initialHeading;
+        } else {
+            clockwise = theta-initialHeading;
+            clockwise -= Math.PI*Math.floor(.5+clockwise/Math.PI);
+        }
+        
+        if(FCMode) {
+            temp = forward*Math.cos(theta) + right*Math.sin(theta);
+            right = -forward*Math.sin(theta) + right*Math.cos(theta);
+            forward = temp;
+        }
+    }
+    
+    public void PID_Drive() {
+        double PID_Y = forward - PY*(forward-enY.getRate()) - DY * getAY();
+        double PID_X = (right - PX*(right-enX.getRate()) - DX * getAX()) * .577;
+        double PID_R = clockwise - PR*(clockwise-getGAngle());
+        
+        double lf = PID_Y + PID_R + PID_X;
+        double rf = PID_Y - PID_R - PID_X;
+        double lb = PID_Y + PID_R - PID_X;
+        double rb = PID_Y - PID_R + PID_X;
+        
+        double max = Math.abs(lf);
+            
+        if (Math.abs(rf) > max) {
+            max = Math.abs(rf);
+        }
+        if (Math.abs(lb) > max) {
+            max = Math.abs(lb);
+        }
+        if (Math.abs(rb) > max) {
+            max = Math.abs(rb);
+        }
+        if (max > 1) {
+            lf /= max;
+            rf /= max;
+            lb /= max;
+            rb /= max;
+        }
+        
+        try {
+            jaglf.setX(lf);
+            jagrf.setX(rf);
+            jaglb.setX(lb);
+            jagrb.setX(rb);
+        } catch (CANTimeoutException ex) {
+            ex.printStackTrace();
+        }
     }
     
     public void holoSensor(){
@@ -224,23 +376,47 @@ public class RobotTemplate extends IterativeRobot {
     }
     
     double getAX() {
-        return byteCombo(buff[0], buff[1]);
+        return byteCombo(buffa[0], buffa[1]);
     }
     
     double getAY() {
-        return byteCombo(buff[2], buff[3]);
+        return byteCombo(buffa[2], buffa[3]);
+    }
+    
+    double getGX() {
+        return byteCombo(buffg[0], buffg[1]);
+    }
+    
+    double getGY() {
+        return byteCombo(buffg[2], buffg[3]);
+    }
+    
+    double getGZ(){
+        return byteCombo(buffg[4], buffg[5]);
     }
     
     double getCX() {
-        return byteCombo(buff[0], buff[1]) - 458;
+        return byteCombo(buffc[0], buffc[1]) - 458;
     }
     
     double getCY() {
-        return byteCombo(buff[4], buff[5]) - 93;
+        return byteCombo(buffc[4], buffc[5]) - 93;
+    }
+    
+    double getGAngle() {
+        return Math.toDegrees(atan2(getGY(), getGX()));
+    }
+    
+    double getGRAngle() {
+        return atan2(getGY(), getGX());
     }
     
     double getCAngle() {
         return Math.toDegrees(atan2(getCY(), getCX()));
+    }
+    
+    double getCRAngle() {
+        return atan2(getCY(), getCX());
     }
 
     double f(double t) {
@@ -276,8 +452,8 @@ public class RobotTemplate extends IterativeRobot {
         cwrite = new I2C(DigitalModule.getInstance(1), 0x3C);
         cread = new I2C(DigitalModule.getInstance(1), 0x3D);
         
-        cwrite.write(0, 0x58);
-        cwrite.write(1, 0);
+        cwrite.write(0, 88);
+        cwrite.write(1, 64);
         cwrite.write(2, 0);
     }
     
@@ -337,5 +513,10 @@ public class RobotTemplate extends IterativeRobot {
          diff -= theta;
         }
         
+    }
+    public void readAll(){
+        cread.read(3, bc, buffc);
+        gread.read(29, bg, buffg);
+        aread.read(50, ba, buffa);
     }
 }
