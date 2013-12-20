@@ -65,26 +65,30 @@ public class RobotTemplate extends IterativeRobot {
     double gScaleForSensor = 1;
     double dt = 0.02;
     double KpR = 14.39 * dt;
-    double KiR = 101.3 * dt;
-    double KpY = 0.013 * dt;		// Kp constant from 30deg toe-in drivetrain model in in/s
-    double KdY = 0.008 * dt;		// Kd constant from 30deg toe-in drivetrain model in in/s^2
-    double KpX = 0.099 * dt;		// Kp constant from 60deg toe-in drivetrain model in in/s
-    double KdX = 0.016 * dt;		// Kd constant from 60deg toe-in drivetrain model in in/s^2
-    double maxXY = 138;			// max expected forward velocity in IPS (138 = 11.5ft/s)
+    double KiR = 38.68 * dt;
+    double KpY = 0.0987 * dt;		// Kp constant from 30deg toe-in drivetrain model in in/s
+    double KdY = 0.04 * dt;		// Kd constant from 30deg toe-in drivetrain model in in/s^2
+    double KpX = 0.0127 * dt;		// Kp constant from 60deg toe-in drivetrain model in in/s
+    double KdX = 0.01 * dt;		// Kd constant from 60deg toe-in drivetrain model in in/s^2
+    double maxXY = 132;			// max expected forward velocity in IPS (138 = 11.5ft/s)
     double GZ = 0;
     double aScale = 32.174 * 12 / 256;	// g force to in/s^2 conversion, scale for LSB per g
     boolean openX, openY, openC = false;
+    boolean iSetting = false;
     double errorH = 0;
     double heading;
+    double joyY;
+    double joyX;
+    double joyZ;
     Timer time;
 
     public void robotInit() {
         try {
-            SmartDashboard.putNumber("PR", PR);
-            SmartDashboard.putNumber("PX", PX);
-            SmartDashboard.putNumber("PY", PY);
+            
+            
             SmartDashboard.putNumber("Heading", heading);
-
+            
+            
             bc = 6;
             bg = 6;
             ba = 6;
@@ -162,10 +166,30 @@ public class RobotTemplate extends IterativeRobot {
     }
 
     public void teleopInit() {
-        openC = false;
-        openX = false;
-        openY = false;
+        openC = iSetting;
+        openX = iSetting;
+        openY = iSetting;
+        SmartDashboard.putNumber("kpR", KpR);
+        SmartDashboard.putNumber("kpX", KpX);
+        SmartDashboard.putNumber("kpY", KpY);
+        SmartDashboard.putNumber("kdX", KdX);
+        SmartDashboard.putNumber("kdY", KdY);
+        SmartDashboard.putNumber("KiR", KiR);
         time.reset();
+    }
+    
+    public void disabledInit(){
+       forward = 0;
+       clockwise = 0;
+       right = 0;
+       
+        
+        SmartDashboard.putBoolean("loop change", false);
+        
+    }
+    
+    public void disabledPeriodic(){
+        smart();
     }
 
     public void sensorPrint() {
@@ -225,11 +249,11 @@ public class RobotTemplate extends IterativeRobot {
         readAll();
         FCMode = true;
         theta = getCHRAngle();
-        forward = -joy.getY() * Math.abs(joy.getY());
-        right = joy.getX() * Math.abs(joy.getX());
+        joyY = -joy.getY() * Math.abs(joy.getY());
+        joyX = joy.getX() * Math.abs(joy.getX());
 
         if (Math.abs(joy.getZ()) > .01) {
-            clockwise = joy.getZ() * Math.abs(joy.getZ());
+            joyZ = joy.getZ() * Math.abs(joy.getZ());
             heading = theta;
             errorH = 0;
         } else {
@@ -238,13 +262,15 @@ public class RobotTemplate extends IterativeRobot {
         }
 
         if (FCMode) {
+            //takes values from joysticks and changes the values to the correct 
+            //vector based on compass input
             temp = forward * Math.cos(theta) + right * Math.sin(theta);
             right = -forward * Math.sin(theta) + right * Math.cos(theta);
             forward = temp;
         }
         SmartDashboard.putNumber("heading_put", heading);
     }
-
+    
     public void PID_Drive() {
         double oForward = 0, oRight = 0, oClock = 0;
 
@@ -258,12 +284,13 @@ public class RobotTemplate extends IterativeRobot {
         //adds to forward the amount in which we want to move in y direction in in/s
         //max velocity times amount requested (-1, 1), minus current speed
         //then, the derivative of the speed (acceleration) is added to to the value of forward 
-        forward = forward + KpY * (maxXY * (joy.getY() * Math.abs(joy.getY())) - VY) + KdY * AY;//PD expected range +/- 1.0
+        forward = forward + KpY * (maxXY * joyY - VY) + KdY * AY;//PD expected range +/- 1.0
         //same stuff happens to right as above
-        right = right + KpX * (maxXY * (joy.getX() * Math.abs(joy.getX())) - VX) + KdX * AX;	//PD expected range +/- 0.577
-        clockwise = clockwise + KpR * (6.28 * (joy.getZ() * Math.abs(joy.getZ())) - GZ) + errorH; //replace 0 with KpR
+        right = right + KpX * (maxXY * joyX - VX) + KdX * AX;	//PD expected range +/- 0.577
+        
+        clockwise = clockwise + KpR * (6.28 * joyZ - GZ) + errorH; //replace 0 with KpR
 
-        if (forward > 15 && !openY) {
+        if (Math.abs(forward) > 10 && !openY) {
             System.out.println("TERROR: PID-Y open (1.5 < " + forward + "): " + joy.getY() + ", " + VY + ", " + AY);
             oForward = -joy.getY();
             openY = true;
@@ -271,7 +298,7 @@ public class RobotTemplate extends IterativeRobot {
         if (openY) {
             oForward = -joy.getY();
         }
-        if (right > 10 && !openX) {
+        if (Math.abs(right) > 10 && !openX) {
             System.out.println("TERROR: PID-X open (1 < " + right + "): " + joy.getX() + ", " + VX + ", " + AX);
             oRight = joy.getX() * 0.577;
             openX = true;
@@ -279,7 +306,7 @@ public class RobotTemplate extends IterativeRobot {
         if (openX) {
             oRight = joy.getX() * 0.577;
         }
-        if (clockwise > 10 && !openC) {
+        if (Math.abs(clockwise) > 10 && !openC) {
             System.out.println("TERROR: PID-Z open (1 < " + clockwise + "): " + joy.getZ());
             oClock = joy.getZ();
             openC = true;
@@ -294,21 +321,7 @@ public class RobotTemplate extends IterativeRobot {
          double PID_R = (clockwise - PR*(clockwise-(getGZ()/.935)));
          */
 
-        SmartDashboard.putNumber("CW", clockwise);
-        SmartDashboard.putNumber("GZ", GZ);
-        SmartDashboard.putNumber("enX", enX.getRate());
-        SmartDashboard.putNumber("enY", enY.getRate());
-        SmartDashboard.putNumber("kpR", KpR);
-        SmartDashboard.putNumber("kpX", KpX);
-        SmartDashboard.putNumber("kpY", KpY);
-        SmartDashboard.putNumber("kdX", KdX);
-        SmartDashboard.putNumber("kdY", KdY);
-        SmartDashboard.putBoolean("openC", openC);
-        SmartDashboard.putBoolean("openX", openX);
-        SmartDashboard.putBoolean("openY", openY);
-        SmartDashboard.putNumber("C", clockwise);
-        SmartDashboard.putNumber("R", right);
-        SmartDashboard.putNumber("F", forward);
+        
 
         double lf;
         double rf;
@@ -356,11 +369,39 @@ public class RobotTemplate extends IterativeRobot {
     }
 
     public void smart() {
+        SmartDashboard.putNumber("CW", clockwise);
+        SmartDashboard.putNumber("GZ", GZ);
+        SmartDashboard.putNumber("enX", enX.getRate());
+        SmartDashboard.putNumber("enY", enY.getRate());
+        
+        SmartDashboard.putNumber("errorH" , errorH);
+        
+        SmartDashboard.putNumber("C", clockwise);
+        SmartDashboard.putNumber("R", right);
+        SmartDashboard.putNumber("F", forward); //here
+        
+        SmartDashboard.putBoolean("openCp", openC);
+        SmartDashboard.putBoolean("openXp", openX);
+        SmartDashboard.putBoolean("openYp", openY);
+        
         KpR = SmartDashboard.getNumber("kpR");
         KpX = SmartDashboard.getNumber("kpX");
         KpY = SmartDashboard.getNumber("kpY");
         KdX = SmartDashboard.getNumber("kdX");
         KdY = SmartDashboard.getNumber("kdY");
+        KiR = SmartDashboard.getNumber("KiR");
+        
+        SmartDashboard.putNumber("heading", heading);
+        SmartDashboard.putNumber("theta", theta);
+        
+        
+        if(SmartDashboard.getBoolean("loop change")){
+        openC = SmartDashboard.getBoolean("openC");
+        openY = SmartDashboard.getBoolean("openY");
+        openX = SmartDashboard.getBoolean("openX");
+        SmartDashboard.putBoolean("loop change", false);
+        
+        }
         //heading = SmartDashboard.getNumber("Heading");
     }
 
@@ -645,5 +686,9 @@ public class RobotTemplate extends IterativeRobot {
         cread.read(3, bc, buffc);
         gread.read(29, bg, buffg);
         aread.read(50, ba, buffa);
+    }
+    
+    public double dropNum(double num){
+        return num-Math.floor(num);
     }
 }
