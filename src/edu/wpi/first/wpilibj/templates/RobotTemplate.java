@@ -62,15 +62,11 @@ public class RobotTemplate extends IterativeRobot {
     double maxXY = 132;         //max expected forward velocity in IPS (138 = 11.5ft/s)
     double GZ = 0;
     double aScale = 32.174 * 12 / 256;	// g force to in/s^2 conversion, scale for LSB per g
-<<<<<<< HEAD
-    boolean openX = true, openY = true, openC = true;
-=======
     double errorH = 0;
     double joyX, joyY, joyZ;
 
     boolean FCMode = true;
     boolean openX, openY, openC = false;
->>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
     boolean iSetting = false;
 
     Timer time;
@@ -106,14 +102,7 @@ public class RobotTemplate extends IterativeRobot {
             joy = new Joystick(1);
             gread.read(33, bg, buffg);
             initialHeading = getCRAngle();
-
-<<<<<<< HEAD
             
-            jaglf.configMaxOutputVoltage(12);
-            jagrf.configMaxOutputVoltage(12);
-            jaglb.configMaxOutputVoltage(12);
-            jagrb.configMaxOutputVoltage(12);
-=======
             jaglf.setVoltageRampRate(maxRampRate);
             jagrf.setVoltageRampRate(maxRampRate);
             jaglb.setVoltageRampRate(maxRampRate);
@@ -122,7 +111,6 @@ public class RobotTemplate extends IterativeRobot {
             jagrf.configMaxOutputVoltage(maxVoltage);
             jaglb.configMaxOutputVoltage(maxVoltage);
             jagrb.configMaxOutputVoltage(maxVoltage);
->>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
 
         } catch (CANTimeoutException ex) {
             ex.printStackTrace();
@@ -133,7 +121,6 @@ public class RobotTemplate extends IterativeRobot {
 
     public void teleopPeriodic() {
         PID_Drive();
-<<<<<<< HEAD
         //smart();
 
 //        cread.read(3, bl, buff);
@@ -158,65 +145,43 @@ public class RobotTemplate extends IterativeRobot {
     }
 
     public void testPeriodic() {
-=======
         smart();
         //holoSensor();
->>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
     }
 
     public void teleopInit() {
         /*openC = iSetting;
         openX = iSetting;
         openY = iSetting;
-<<<<<<< HEAD
-        /*SmartDashboard.putNumber("kpR", KpR);
-=======
 
         SmartDashboard.putNumber("kpR", KpR);
->>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
+        SmartDashboard.putNumber("kpR", KpR);
         SmartDashboard.putNumber("kpX", KpX);
         SmartDashboard.putNumber("kpY", KpY);
         SmartDashboard.putNumber("kdX", KdX);
         SmartDashboard.putNumber("kdY", KdY);
         SmartDashboard.putNumber("KiR", KiR);
-<<<<<<< HEAD
         SmartDashboard.putBoolean("openC", openC);
         SmartDashboard.putBoolean("openX", openX);
         SmartDashboard.putBoolean("openY", openY);
-        SmartDashboard.putBoolean("FullOpen", open);
-        * */
-=======
-
->>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
+        SmartDashboard.putBoolean("FullOpen", open); */
         time.reset();
     }
     
     public void disabledInit(){
-<<<<<<< HEAD
        forward = 0;
        clockwise = 0;
        right = 0;
-       
-        
-        //SmartDashboard.putBoolean("loop change", false);
-        
+       //SmartDashboard.putBoolean("loop change", false);
     }
     
     public void disabledPeriodic(){
-       // smart();
-    }
-=======
+        // smart();
         forward = 0;
         clockwise = 0;
         right = 0;
-
         SmartDashboard.putBoolean("loop change", false);
     }
-    
-    public void disabledPeriodic(){ smart(); }
-
-    public void testPeriodic() { }
->>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
 
     public void sensorPrint() {
         readAll();
@@ -306,12 +271,9 @@ public class RobotTemplate extends IterativeRobot {
         
         forward = forward + KpY * (maxXY * joyY - VY) + KdY * AY;//PD expected range +/- 1.0
         right = right + KpX * (maxXY * joyX - VX) + KdX * AX;	//PD expected range +/- 0.577
-<<<<<<< HEAD
         clockwise = clamp(clockwise);
         clockwise = clockwise + KpR * (6.28 * joyZ + GZ) + errorH; //replace 0 with KpR
-=======
         clockwise = clockwise + KpR * (6.28 * joyZ - GZ) + errorH; //replace 0 with KpR
->>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
 
         if (Math.abs(forward) > 10 && !openY) {
             System.out.println("ERROR: PID-Y open (1.5 < " + forward + "): " + joy.getY() + ", " + VY + ", " + AY);
@@ -396,30 +358,26 @@ public class RobotTemplate extends IterativeRobot {
         KdY = SmartDashboard.getNumber("kdY");
         KiR = SmartDashboard.getNumber("KiR");
         
-<<<<<<< HEAD
         SmartDashboard.putNumber("heading", heading);
         SmartDashboard.putNumber("theta", theta);
         
-        
         if(SmartDashboard.getBoolean("loop change")){
-        openC = SmartDashboard.getBoolean("openC");
-        openY = SmartDashboard.getBoolean("openY");
-        openX = SmartDashboard.getBoolean("openX");
-        SmartDashboard.putBoolean("loop change", false);
+            openC = SmartDashboard.getBoolean("openC");
+            openY = SmartDashboard.getBoolean("openY");
+            openX = SmartDashboard.getBoolean("openX");
+            SmartDashboard.putBoolean("loop change", false);
         }
         if(SmartDashboard.getBoolean("FullOpen") ){
             openC = true;
             openX = true;
             openY = true;
-        
-=======
+        }
         if(SmartDashboard.getBoolean("loop change")) {
             openC = SmartDashboard.getBoolean("openC");
             openY = SmartDashboard.getBoolean("openY");
             openX = SmartDashboard.getBoolean("openX");
 
             SmartDashboard.putBoolean("loop change", false);
->>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
         }
         heading = SmartDashboard.getNumber("Heading");
     }
@@ -640,16 +598,9 @@ public class RobotTemplate extends IterativeRobot {
         aread.read(50, ba, buffa);
     }
     
-<<<<<<< HEAD
-    public double dropNum(double num){
-        return num-Math.floor(num);
-    }
-    
     public double clamp(double value){
          return (value > 1) ? 1 : (value < -1) ? -1 : value;
     }
-}
-=======
+
     public double dropNum(double num){ return num-Math.floor(num); }
 }
->>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
