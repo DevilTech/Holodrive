@@ -12,46 +12,35 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class RobotTemplate extends IterativeRobot {
 
-    private CANJaguar jaglf;
-    private CANJaguar jagrf;
-    private CANJaguar jaglb;
-    private CANJaguar jagrb;
-    private Joystick joy;
-    private I2C cread;
-    private I2C cwrite;
-    private I2C gread;
-    private I2C gwrite;
-    private I2C awrite;
-    private I2C aread;
-    private ADXL345_I2C ac;
-    private int bc;
-    private int bg;
-    private int ba;
-    private byte buffc[];
-    private byte buffg[];
-    private byte buffa[];
-    public double longestwheel = 3.83 * 37 / 100;
-    public double shortwheel = 6.5 * Math.PI / 100;
-    public double secondlongwheel = 31 * Math.PI / 100;
-    public double thirdlongwheel = 22.5 * 4.71 / 100;
+    CANJaguar jaglf, jagrf, jaglb, jagrb;
+
+    Joystick joy;
+
+    I2C cread, cwrite;
+    I2C gread, gwrite;
+    I2C aread, awrite;
+
+    byte buffc[], buffg[], buffa[];
+
+    int bc, bg, ba;
     int gSampleRateDivider = 0;
-    private int minX = 2000;
-    private int minY = 2000;
-    private int maxX = -2000;
-    private int maxY = -2000;
-    double yDist = 0;
-    double xDist = 0;
+    int minX = 2000;
+    int minY = 2000;
+    int maxX = -2000;
+    int maxY = -2000;
+    int maxVoltage = 12;
+    int maxRampRate = 22;
+
     Encoder enX = new Encoder(1, 2);
     Encoder enY = new Encoder(3, 4);
-    private double initialHeading;
-    double theta;
-    double theta90;
-    double theta180;
-    double theta270;
-    boolean FCMode = true;
-    double forward;
-    double clockwise;
-    double right;
+    
+    double longestwheel = 3.83 * 37 / 100;
+    double shortwheel = 6.5 * Math.PI / 100;
+    double secondlongwheel = 31 * Math.PI / 100;
+    double thirdlongwheel = 22.5 * 4.71 / 100;
+    double initialHeading, heading;
+    double theta, theta90, theta180, theta270;
+    double forward, clockwise, right;
     double temp;
     double PY = .0;
     double PX = .0;
@@ -66,33 +55,35 @@ public class RobotTemplate extends IterativeRobot {
     double dt = 0.02;
     double KpR = 14.39 * dt;
     double KiR = 38.68 * dt;
-    double KpY = 0.0987 * dt;		// Kp constant from 30deg toe-in drivetrain model in in/s
+    double KpY = 0.0987 * dt;	// Kp constant from 30deg toe-in drivetrain model in in/s
     double KdY = 0.04 * dt;		// Kd constant from 30deg toe-in drivetrain model in in/s^2
-    double KpX = 0.0127 * dt;		// Kp constant from 60deg toe-in drivetrain model in in/s
+    double KpX = 0.0127 * dt;	// Kp constant from 60deg toe-in drivetrain model in in/s
     double KdX = 0.01 * dt;		// Kd constant from 60deg toe-in drivetrain model in in/s^2
-    double maxXY = 132;			// max expected forward velocity in IPS (138 = 11.5ft/s)
+    double maxXY = 132;         //max expected forward velocity in IPS (138 = 11.5ft/s)
     double GZ = 0;
     double aScale = 32.174 * 12 / 256;	// g force to in/s^2 conversion, scale for LSB per g
+<<<<<<< HEAD
     boolean openX = true, openY = true, openC = true;
-    boolean iSetting = false;
+=======
     double errorH = 0;
-    double heading;
-    double joyY;
-    double joyX;
-    double joyZ;
+    double joyX, joyY, joyZ;
+
+    boolean FCMode = true;
+    boolean openX, openY, openC = false;
+>>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
+    boolean iSetting = false;
+
     Timer time;
     boolean open = false;
     
     public void robotInit() {
-        try {
-            
-            
+        try {           
             SmartDashboard.putNumber("Heading", heading);
-            
             
             bc = 6;
             bg = 6;
             ba = 6;
+            heading = 0;
 
             buffc = new byte[bc];
             buffg = new byte[bg];
@@ -115,28 +106,34 @@ public class RobotTemplate extends IterativeRobot {
             joy = new Joystick(1);
             gread.read(33, bg, buffg);
             initialHeading = getCRAngle();
-            heading = 0;
 
+<<<<<<< HEAD
             
             jaglf.configMaxOutputVoltage(12);
             jagrf.configMaxOutputVoltage(12);
             jaglb.configMaxOutputVoltage(12);
             jagrb.configMaxOutputVoltage(12);
+=======
+            jaglf.setVoltageRampRate(maxRampRate);
+            jagrf.setVoltageRampRate(maxRampRate);
+            jaglb.setVoltageRampRate(maxRampRate);
+            jagrb.setVoltageRampRate(maxRampRate);
+            jaglf.configMaxOutputVoltage(maxVoltage);
+            jagrf.configMaxOutputVoltage(maxVoltage);
+            jaglb.configMaxOutputVoltage(maxVoltage);
+            jagrb.configMaxOutputVoltage(maxVoltage);
+>>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
 
         } catch (CANTimeoutException ex) {
             ex.printStackTrace();
         }
     }
 
-    public void autonomousPeriodic() {
-        System.out.println("AUTO");
-    }
+    public void autonomousPeriodic() { System.out.println("AUTO"); }
 
     public void teleopPeriodic() {
-        //sensorTest();
-        // sensorPrint();
-        // holoSensor();
         PID_Drive();
+<<<<<<< HEAD
         //smart();
 
 //        cread.read(3, bl, buff);
@@ -161,27 +158,41 @@ public class RobotTemplate extends IterativeRobot {
     }
 
     public void testPeriodic() {
+=======
+        smart();
+        //holoSensor();
+>>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
     }
 
     public void teleopInit() {
         /*openC = iSetting;
         openX = iSetting;
         openY = iSetting;
+<<<<<<< HEAD
         /*SmartDashboard.putNumber("kpR", KpR);
+=======
+
+        SmartDashboard.putNumber("kpR", KpR);
+>>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
         SmartDashboard.putNumber("kpX", KpX);
         SmartDashboard.putNumber("kpY", KpY);
         SmartDashboard.putNumber("kdX", KdX);
         SmartDashboard.putNumber("kdY", KdY);
         SmartDashboard.putNumber("KiR", KiR);
+<<<<<<< HEAD
         SmartDashboard.putBoolean("openC", openC);
         SmartDashboard.putBoolean("openX", openX);
         SmartDashboard.putBoolean("openY", openY);
         SmartDashboard.putBoolean("FullOpen", open);
         * */
+=======
+
+>>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
         time.reset();
     }
     
     public void disabledInit(){
+<<<<<<< HEAD
        forward = 0;
        clockwise = 0;
        right = 0;
@@ -194,6 +205,18 @@ public class RobotTemplate extends IterativeRobot {
     public void disabledPeriodic(){
        // smart();
     }
+=======
+        forward = 0;
+        clockwise = 0;
+        right = 0;
+
+        SmartDashboard.putBoolean("loop change", false);
+    }
+    
+    public void disabledPeriodic(){ smart(); }
+
+    public void testPeriodic() { }
+>>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
 
     public void sensorPrint() {
         readAll();
@@ -203,7 +226,6 @@ public class RobotTemplate extends IterativeRobot {
     public void sensorTest() {
         if (time.get() < 3) {
             try {
-                //for x
                 jaglf.setX(1, (byte) 1);
                 jagrf.setX(1, (byte) 1);
                 jaglb.setX(1, (byte) 1);
@@ -211,9 +233,7 @@ public class RobotTemplate extends IterativeRobot {
                 CANJaguar.updateSyncGroup((byte) 1);
                 readAll();
                 System.out.println(time.get() + "," + getGZ());
-            } catch (CANTimeoutException ex) {
-                ex.printStackTrace();
-            }
+            } catch (CANTimeoutException ex) { ex.printStackTrace(); }
             /*  }else if (time.get() < 7){
              try 
              {
@@ -236,9 +256,7 @@ public class RobotTemplate extends IterativeRobot {
                 jagrf.setX(0);
                 jaglb.setX(0);
                 jagrb.setX(0);
-            } catch (CANTimeoutException ex) {
-                ex.printStackTrace();
-            }
+            } catch (CANTimeoutException ex) { ex.printStackTrace(); }
         }
     }
 
@@ -259,10 +277,7 @@ public class RobotTemplate extends IterativeRobot {
             joyZ = joy.getZ() * Math.abs(joy.getZ());
             heading = theta;
             errorH = 0;
-        } else {
-            errorH = radRap(heading - theta) *KiR;
-                       
-        }
+        } else { errorH = radRap(heading - theta) *KiR; }
 
         if (FCMode) {
             //takes values from joysticks and changes the values to the correct 
@@ -279,61 +294,52 @@ public class RobotTemplate extends IterativeRobot {
 
         getInput();
         GZ = getGZ() * gScale;
-        //----------------------------------------------------------------------------------------------------------------------------------------------
+
         double VY = enY.getRate();
         double AY = getAY() * aScale;// expected V range +/- maxXY
         double VX = enX.getRate();
         double AX = getAX() * aScale;	// expected A range +/- 28.6
+
         //adds to forward the amount in which we want to move in y direction in in/s
         //max velocity times amount requested (-1, 1), minus current speed
         //then, the derivative of the speed (acceleration) is added to to the value of forward 
         
         forward = forward + KpY * (maxXY * joyY - VY) + KdY * AY;//PD expected range +/- 1.0
-        //same stuff happens to right as above
         right = right + KpX * (maxXY * joyX - VX) + KdX * AX;	//PD expected range +/- 0.577
+<<<<<<< HEAD
         clockwise = clamp(clockwise);
         clockwise = clockwise + KpR * (6.28 * joyZ + GZ) + errorH; //replace 0 with KpR
+=======
+        clockwise = clockwise + KpR * (6.28 * joyZ - GZ) + errorH; //replace 0 with KpR
+>>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
 
         if (Math.abs(forward) > 10 && !openY) {
-            System.out.println("TERROR: PID-Y open (1.5 < " + forward + "): " + joy.getY() + ", " + VY + ", " + AY);
+            System.out.println("ERROR: PID-Y open (1.5 < " + forward + "): " + joy.getY() + ", " + VY + ", " + AY);
             oForward = -joy.getY();
             openY = true;
         }
-        if (openY) {
-            oForward = -joy.getY();
-        }
+        if (openY) { oForward = -joy.getY(); }
+
         if (Math.abs(right) > 10 && !openX) {
-            System.out.println("TERROR: PID-X open (1 < " + right + "): " + joy.getX() + ", " + VX + ", " + AX);
+            System.out.println("ERROR: PID-X open (1 < " + right + "): " + joy.getX() + ", " + VX + ", " + AX);
             oRight = joy.getX() * 0.577;
             openX = true;
         }
-        if (openX) {
-            oRight = joy.getX() * 0.577;
-        }
+        if (openX) { oRight = joy.getX() * 0.577; }
+
         if (Math.abs(clockwise) > 10 && !openC) {
-            System.out.println("TERROR: PID-Z open (1 < " + clockwise + "): " + joy.getZ());
+            System.out.println("ERROR: PID-Z open (1 < " + clockwise + "): " + joy.getZ());
             oClock = joy.getZ();
             openC = true;
         }
-        if (openC) {
-            oClock = joy.getZ();
-        }// max right =  cos(60) / cos(30)
-//-----------------------------------------------------------------------------------------------------------------------
-        /*    
-         double PID_Y = forward - PY*(forward-enY.getRate()) - DY * getAY(); 
-         double PID_X = (right - PX*(right-enX.getRate())* .577 - DX * getAX());
-         double PID_R = (clockwise - PR*(clockwise-(getGZ()/.935)));
-         */
+        if (openC) { oClock = joy.getZ(); }
+        /* max right =  cos(60) / cos(30)    
+        double PID_Y = forward - PY*(forward-enY.getRate()) - DY * getAY(); 
+        double PID_X = (right - PX*(right-enX.getRate())* .577 - DX * getAX());
+        double PID_R = (clockwise - PR*(clockwise-(getGZ()/.935))); */
 
-        
-
-        double lf;
-        double rf;
-        double lb;
-        double rb;
-        double ff;
-        double fc;
-        double fr;
+        double lf, rf, lb, rb;
+        double ff, fc, fr;
 
         fc = openC ? oClock : clockwise;
         ff = openY ? oForward : forward;
@@ -346,15 +352,10 @@ public class RobotTemplate extends IterativeRobot {
 
         double max = Math.abs(lf);
 
-        if (Math.abs(rf) > max) {
-            max = Math.abs(rf);
-        }
-        if (Math.abs(lb) > max) {
-            max = Math.abs(lb);
-        }
-        if (Math.abs(rb) > max) {
-            max = Math.abs(rb);
-        }
+        if (Math.abs(rf) > max) { max = Math.abs(rf); }
+        if (Math.abs(lb) > max) { max = Math.abs(lb); }
+        if (Math.abs(rb) > max) { max = Math.abs(rb); }
+
         if (max > 1) {
             lf /= max;
             rf /= max;
@@ -377,12 +378,12 @@ public class RobotTemplate extends IterativeRobot {
         SmartDashboard.putNumber("GZ", GZ);
         SmartDashboard.putNumber("enX", enX.getRate());
         SmartDashboard.putNumber("enY", enY.getRate());
-        
         SmartDashboard.putNumber("errorH" , errorH);
-        
         SmartDashboard.putNumber("C", clockwise);
         SmartDashboard.putNumber("R", right);
         SmartDashboard.putNumber("F", forward); //here
+        SmartDashboard.putNumber("heading", heading);
+        SmartDashboard.putNumber("theta", theta);
         
         SmartDashboard.putBoolean("openCp", openC);
         SmartDashboard.putBoolean("openXp", openX);
@@ -395,6 +396,7 @@ public class RobotTemplate extends IterativeRobot {
         KdY = SmartDashboard.getNumber("kdY");
         KiR = SmartDashboard.getNumber("KiR");
         
+<<<<<<< HEAD
         SmartDashboard.putNumber("heading", heading);
         SmartDashboard.putNumber("theta", theta);
         
@@ -410,6 +412,14 @@ public class RobotTemplate extends IterativeRobot {
             openX = true;
             openY = true;
         
+=======
+        if(SmartDashboard.getBoolean("loop change")) {
+            openC = SmartDashboard.getBoolean("openC");
+            openY = SmartDashboard.getBoolean("openY");
+            openX = SmartDashboard.getBoolean("openX");
+
+            SmartDashboard.putBoolean("loop change", false);
+>>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
         }
         heading = SmartDashboard.getNumber("Heading");
     }
@@ -417,19 +427,16 @@ public class RobotTemplate extends IterativeRobot {
     public void holoSensor() {
         readAll();
         double max;
-        while (joy.getRawButton(5)) {
-            turnLeft();
-        }
-        while (joy.getRawButton(6)) {
-            turnRight();
-        }
+
+        while (joy.getRawButton(5)) { turnLeft(); }
+        while (joy.getRawButton(6)) { turnRight(); }
 
         try {
             double theta = getCRAngle() - initialHeading;
-            double temp;
             double right = joy.getX() * Math.abs(joy.getX());
             double forward = -joy.getY() * Math.abs(joy.getY());
             double clockwise = joy.getZ() * Math.abs(joy.getZ());
+            double temp;
 
             temp = forward * Math.cos(theta) + right * Math.sin(theta);
             right = -forward * Math.sin(theta) + right * Math.cos(theta);
@@ -446,15 +453,10 @@ public class RobotTemplate extends IterativeRobot {
 
             max = Math.abs(lf);
 
-            if (Math.abs(rf) > max) {
-                max = Math.abs(rf);
-            }
-            if (Math.abs(lb) > max) {
-                max = Math.abs(lb);
-            }
-            if (Math.abs(rb) > max) {
-                max = Math.abs(rb);
-            }
+            if (Math.abs(rf) > max) { max = Math.abs(rf); }
+            if (Math.abs(lb) > max) { max = Math.abs(lb); }
+            if (Math.abs(rb) > max) { max = Math.abs(rb); }
+            
             if (max > 1) {
                 lf /= max;
                 rf /= max;
@@ -471,7 +473,7 @@ public class RobotTemplate extends IterativeRobot {
         }
     }
 
-    private void turnLeft() {
+    void turnLeft() {
         try {
             jaglf.setX(-shortwheel / longestwheel);
             jagrf.setX(-thirdlongwheel / longestwheel);
@@ -482,7 +484,7 @@ public class RobotTemplate extends IterativeRobot {
         }
     }
 
-    private void turnRight() {
+    void turnRight() {
         try {
             jagrf.setX(-shortwheel / longestwheel);
             jaglf.setX(-thirdlongwheel / longestwheel);
@@ -493,13 +495,7 @@ public class RobotTemplate extends IterativeRobot {
         }
     }
 
-    private int byteCombo(byte num1, byte num2) {
-        int x = num1;
-        x = x << 8;
-        int y = num2;
-        x |= y & 0x000000ff;
-        return x;
-    }
+    public int byteCombo(byte num1, byte num2) { return ((num1 << 8) | num2 & 0x000000ff); }
 
     public double atan2(double y, double x) {
         double pi = Math.PI;
@@ -539,55 +535,23 @@ public class RobotTemplate extends IterativeRobot {
         }
     }
 
-    double getAX() {
-        return byteCombo(buffa[0], buffa[1]);
-    }
+    double getAX() { return byteCombo(buffa[0], buffa[1]); }
+    double getAY() { return byteCombo(buffa[2], buffa[3]); }
 
-    double getAY() {
-        return byteCombo(buffa[2], buffa[3]);
-    }
+    double getGX() { return byteCombo(buffg[0], buffg[1]); }
+    double getGY() { return byteCombo(buffg[2], buffg[3]); }
+    double getGZ() { return (byteCombo(buffg[4], buffg[5])) / gScaleForSensor; }
 
-    double getGX() {
-        return byteCombo(buffg[0], buffg[1]);
-    }
+    double getCX() { return byteCombo(buffc[0], buffc[1]); } // - 458
+    double getCY() { return byteCombo(buffc[4], buffc[5]); } //  - 93
 
-    double getGY() {
-        return byteCombo(buffg[2], buffg[3]);
-    }
+    double getGAngle() { return Math.toDegrees(atan2(getGY(), getGX())); }
+    double getGRAngle() { return atan2(getGY(), getGX()); }
 
-    double getGZ() {
-        return (byteCombo(buffg[4], buffg[5])) / gScaleForSensor;
-    }
+    double getCAngle() { return Math.toDegrees(atan2(getCY(), getCX())); }
+    double getCRAngle() { return atan2(getCY(), getCX()); }
+    double getCHRAngle() { return radRap(atan2(getCY(), getCX()) - initialHeading); }
 
-    double getCX() {
-        return byteCombo(buffc[0], buffc[1]); // - 458
-    }
-
-    double getCY() {
-        return byteCombo(buffc[4], buffc[5]); //  - 93
-    }
-    //Not nessesary
-
-    double getGAngle() {
-        return Math.toDegrees(atan2(getGY(), getGX()));
-    }
-
-    double getGRAngle() {
-        return atan2(getGY(), getGX());
-    }
-
-    double getCAngle() {
-        return Math.toDegrees(atan2(getCY(), getCX()));
-    }
-
-    double getCRAngle() {
-        return atan2(getCY(), getCX());
-    }
-
-    double getCHRAngle() {
-        return radRap(atan2(getCY(), getCX()) - initialHeading);
-        
-    }
     public double radRap(double d){
         return (d> Math.PI) ? d-2*Math.PI : (d< -Math.PI) ? d+ 2*Math.PI : d;
     }
@@ -596,31 +560,15 @@ public class RobotTemplate extends IterativeRobot {
         return -0.001096995 + t * (1.041963708 + t * (-0.196333807 + t * (-0.060821409)));
     }
 
-    int minVal(int newVal, int oldMin) {
-        if (newVal < oldMin) {
-            return newVal;
-        } else {
-            return oldMin;
-        }
-    }
+    int minVal(int newVal, int oldMin) { return (newVal < oldMin) ? newVal : oldMin; }
+    int maxVal(int newVal, int oldMax) { return (newVal > oldMax) ? newVal : oldMax; }
 
-    int maxVal(int newVal, int oldMax) {
-        if (newVal > oldMax) {
-            return newVal;
-        } else {
-            return oldMax;
-        }
-    }
-
-    double[] getDisp() {
-        double[] displacement = {enX.getDistance(), enY.getDistance()};
-        return displacement;
-    }
+    double[] getDisp() { return new double[] {enX.getDistance(), enY.getDistance()}; }
 
     void setupPots() {
         enX.start();
-        enX.setDistancePerPulse(8.64360 / 90);
         enY.start();
+        enX.setDistancePerPulse(8.64360 / 90);
         enY.setDistancePerPulse(8.64360 / 90);
     }
 
@@ -663,15 +611,10 @@ public class RobotTemplate extends IterativeRobot {
 
             double max = Math.abs(lf);
 
-            if (Math.abs(rf) > max) {
-                max = Math.abs(rf);
-            }
-            if (Math.abs(lb) > max) {
-                max = Math.abs(lb);
-            }
-            if (Math.abs(rb) > max) {
-                max = Math.abs(rb);
-            }
+            if (Math.abs(rf) > max) { max = Math.abs(rf); }
+            if (Math.abs(lb) > max) { max = Math.abs(lb); }
+            if (Math.abs(rb) > max) { max = Math.abs(rb); }
+
             if (max > 1) {
                 lf /= max;
                 rf /= max;
@@ -697,6 +640,7 @@ public class RobotTemplate extends IterativeRobot {
         aread.read(50, ba, buffa);
     }
     
+<<<<<<< HEAD
     public double dropNum(double num){
         return num-Math.floor(num);
     }
@@ -705,3 +649,7 @@ public class RobotTemplate extends IterativeRobot {
          return (value > 1) ? 1 : (value < -1) ? -1 : value;
     }
 }
+=======
+    public double dropNum(double num){ return num-Math.floor(num); }
+}
+>>>>>>> 32953885dc0a7abc373bc22d334791df79bd9a4b
