@@ -73,7 +73,7 @@ public class RobotTemplate extends IterativeRobot {
     double maxXY = 132;			// max expected forward velocity in IPS (138 = 11.5ft/s)
     double GZ = 0;
     double aScale = 32.174 * 12 / 256;	// g force to in/s^2 conversion, scale for LSB per g
-    boolean openX, openY, openC = false;
+    boolean openX = true, openY = true, openC = true;
     boolean iSetting = false;
     double errorH = 0;
     double heading;
@@ -81,7 +81,8 @@ public class RobotTemplate extends IterativeRobot {
     double joyX;
     double joyZ;
     Timer time;
-
+    boolean open = false;
+    
     public void robotInit() {
         try {
             
@@ -116,10 +117,7 @@ public class RobotTemplate extends IterativeRobot {
             initialHeading = getCRAngle();
             heading = 0;
 
-            jaglf.setVoltageRampRate(22);
-            jagrf.setVoltageRampRate(22);
-            jaglb.setVoltageRampRate(22);
-            jagrb.setVoltageRampRate(22);
+            
             jaglf.configMaxOutputVoltage(12);
             jagrf.configMaxOutputVoltage(12);
             jaglb.configMaxOutputVoltage(12);
@@ -139,7 +137,7 @@ public class RobotTemplate extends IterativeRobot {
         // sensorPrint();
         // holoSensor();
         PID_Drive();
-        smart();
+        //smart();
 
 //        cread.read(3, bl, buff);
 //        gread.read(33, bg, buffg);
@@ -166,15 +164,20 @@ public class RobotTemplate extends IterativeRobot {
     }
 
     public void teleopInit() {
-        openC = iSetting;
+        /*openC = iSetting;
         openX = iSetting;
         openY = iSetting;
-        SmartDashboard.putNumber("kpR", KpR);
+        /*SmartDashboard.putNumber("kpR", KpR);
         SmartDashboard.putNumber("kpX", KpX);
         SmartDashboard.putNumber("kpY", KpY);
         SmartDashboard.putNumber("kdX", KdX);
         SmartDashboard.putNumber("kdY", KdY);
         SmartDashboard.putNumber("KiR", KiR);
+        SmartDashboard.putBoolean("openC", openC);
+        SmartDashboard.putBoolean("openX", openX);
+        SmartDashboard.putBoolean("openY", openY);
+        SmartDashboard.putBoolean("FullOpen", open);
+        * */
         time.reset();
     }
     
@@ -184,12 +187,12 @@ public class RobotTemplate extends IterativeRobot {
        right = 0;
        
         
-        SmartDashboard.putBoolean("loop change", false);
+        //SmartDashboard.putBoolean("loop change", false);
         
     }
     
     public void disabledPeriodic(){
-        smart();
+       // smart();
     }
 
     public void sensorPrint() {
@@ -284,11 +287,12 @@ public class RobotTemplate extends IterativeRobot {
         //adds to forward the amount in which we want to move in y direction in in/s
         //max velocity times amount requested (-1, 1), minus current speed
         //then, the derivative of the speed (acceleration) is added to to the value of forward 
+        
         forward = forward + KpY * (maxXY * joyY - VY) + KdY * AY;//PD expected range +/- 1.0
         //same stuff happens to right as above
         right = right + KpX * (maxXY * joyX - VX) + KdX * AX;	//PD expected range +/- 0.577
-        
-        clockwise = clockwise + KpR * (6.28 * joyZ - GZ) + errorH; //replace 0 with KpR
+        clockwise = clamp(clockwise);
+        clockwise = clockwise + KpR * (6.28 * joyZ + GZ) + errorH; //replace 0 with KpR
 
         if (Math.abs(forward) > 10 && !openY) {
             System.out.println("TERROR: PID-Y open (1.5 < " + forward + "): " + joy.getY() + ", " + VY + ", " + AY);
@@ -400,9 +404,14 @@ public class RobotTemplate extends IterativeRobot {
         openY = SmartDashboard.getBoolean("openY");
         openX = SmartDashboard.getBoolean("openX");
         SmartDashboard.putBoolean("loop change", false);
+        }
+        if(SmartDashboard.getBoolean("FullOpen") ){
+            openC = true;
+            openX = true;
+            openY = true;
         
         }
-        //heading = SmartDashboard.getNumber("Heading");
+        heading = SmartDashboard.getNumber("Heading");
     }
 
     public void holoSensor() {
@@ -690,5 +699,9 @@ public class RobotTemplate extends IterativeRobot {
     
     public double dropNum(double num){
         return num-Math.floor(num);
+    }
+    
+    public double clamp(double value){
+         return (value > 1) ? 1 : (value < -1) ? -1 : value;
     }
 }
