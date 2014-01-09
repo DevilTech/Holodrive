@@ -55,8 +55,10 @@ public class RobotTemplate extends IterativeRobot {
     double KpR = 14.39 * dt;
     double KiR = 38.68 * dt;
     double KpY = 0.0987 * dt;	// Kp constant from 30deg toe-in drivetrain model in in/s
-    double KdY = 0.04 * dt;		// Kd constant from 30deg toe-in drivetrain model in in/s^2
-    double KpX = 0.0127 * dt;	// Kp constant from 60deg toe-in drivetrain model in in/s
+    //double KdY = 0.04 * dt;		// Kd constant from 30deg toe-in drivetrain model in in/s^2
+    //double KpX = 0.0127 * dt;	// Kp constant from 60deg toe-in drivetrain model in in/s
+    double KdY = 0;		// Kd constant from 30deg toe-in drivetrain model in in/s^2
+    double KpX = 0;	// Kp constant from 60deg toe-in drivetrain model in in/s
     double KdX = 0.01 * dt;		// Kd constant from 60deg toe-in drivetrain model in in/s^2
     double maxXY = 132;         //max expected forward velocity in IPS (138 = 11.5ft/s)
     double GZ = 0;
@@ -67,9 +69,9 @@ public class RobotTemplate extends IterativeRobot {
     boolean FCMode = true;
     boolean openX, openY, openC = false;
     boolean iSetting = false;
+    boolean open = false;
 
     Timer time;
-    boolean open = false;
     
     public void robotInit() {
         try {           
@@ -120,8 +122,10 @@ public class RobotTemplate extends IterativeRobot {
 
     public void teleopPeriodic() {
         PID_Drive();
+        //sensorPrint();
         smartPull();
         smartPush();
+        //holoSensor();
     }
 
     public void testPeriodic() {
@@ -134,20 +138,21 @@ public class RobotTemplate extends IterativeRobot {
     }
     
     public void disabledInit(){
-        smartInit();
+       smartInit();
        forward = 0;
        clockwise = 0;
        right = 0;
+       openC = true;
+       openX = true;
+       openY = false;
        
        
     }
     
     public void disabledPeriodic(){
-        smartPush();
-        smartPull();
-        openC = true;
-       openX = true;
-       openY = true;
+       smartPush();
+       smartPull();
+       
         
         forward = 0;
         clockwise = 0;
@@ -156,7 +161,7 @@ public class RobotTemplate extends IterativeRobot {
 
     public void sensorPrint() {
         readAll();
-        System.out.println(time.get() + ", " + getGZ());
+        System.out.println(enY.get() + ", " + getAY());
     }
 
     public void sensorTest() {
@@ -473,8 +478,8 @@ public class RobotTemplate extends IterativeRobot {
         }
     }
 
-    double getAX() { return byteCombo(buffa[0], buffa[1]); }
-    double getAY() { return byteCombo(buffa[2], buffa[3]); }
+    double getAX() { return byteCombo(buffa[1], buffa[0]); }
+    double getAY() { return byteCombo(buffa[3], buffa[2]); }
 
     double getGX() { return byteCombo(buffg[0], buffg[1]); }
     double getGY() { return byteCombo(buffg[2], buffg[3]); }
@@ -529,7 +534,7 @@ public class RobotTemplate extends IterativeRobot {
         awrite = new I2C(DigitalModule.getInstance(1), 0xA6);
         aread = new I2C(DigitalModule.getInstance(1), 0xA7);
 
-        awrite.write(44, 0x0C);
+        awrite.write(44, 0x09);
         awrite.write(45, 0x08);
         awrite.write(49, 0);
     }
