@@ -14,7 +14,7 @@ public class RobotTemplate extends IterativeRobot {
     CANJaguar jaglf, jagrf, jaglb, jagrb;
 
     Joystick joy;
-
+    ADXL345_I2C ad;
     I2C cread, cwrite;
     I2C gread, gwrite;
     I2C aread, awrite;
@@ -29,6 +29,11 @@ public class RobotTemplate extends IterativeRobot {
     int maxY = -2000;
     int maxVoltage = 12;
     int maxRampRate = 22;
+    
+    double tempVeloHistoryY = 0;
+    double currentVeloY = 0;
+    double tempVeloHistoryX = 0;
+    double currentVeloX = 0;
 
     Encoder enX = new Encoder(1, 2);
     Encoder enY = new Encoder(3, 4);
@@ -55,14 +60,14 @@ public class RobotTemplate extends IterativeRobot {
     double KpR = 14.39 * dt;
     double KiR = 38.68 * dt;
     double KpY = 0.0987 * dt;	// Kp constant from 30deg toe-in drivetrain model in in/s
-    //double KdY = 0.04 * dt;		// Kd constant from 30deg toe-in drivetrain model in in/s^2
-    //double KpX = 0.0127 * dt;	// Kp constant from 60deg toe-in drivetrain model in in/s
     double KdY = 0;		// Kd constant from 30deg toe-in drivetrain model in in/s^2
-    double KpX = 0;	// Kp constant from 60deg toe-in drivetrain model in in/s
-    double KdX = 0.01 * dt;		// Kd constant from 60deg toe-in drivetrain model in in/s^2
+    double KpX = 0.0127 * dt;	// Kp constant from 60deg toe-in drivetrain model in in/s
+    double KdX = 0;  // Kd constant from 60deg toe-in drivetrain model in in/s^2
+    //double KdY = 0.04 * dt;
+    //double KdX = 0.01 * dt;
     double maxXY = 132;         //max expected forward velocity in IPS (138 = 11.5ft/s)
     double GZ = 0;
-    double aScale = 32.174 * 12 / 256;	// g force to in/s^2 conversion, scale for LSB per g
+    double aScale = 32.174 * 12 * .004;	// g force to in/s^2 conversion, scale for LSB per g
     double errorH = 0;
     double joyX, joyY, joyZ;
 
@@ -81,7 +86,9 @@ public class RobotTemplate extends IterativeRobot {
             bg = 6;
             ba = 6;
             heading = 0;
-
+            
+            ad = new ADXL345_I2C(1, ADXL345_I2C.DataFormat_Range.k2G);
+            
             buffc = new byte[bc];
             buffg = new byte[bg];
             buffa = new byte[ba];
@@ -91,7 +98,6 @@ public class RobotTemplate extends IterativeRobot {
             setupAccel();
             setupPots();
             readAll();
-
             time = new Timer();
             time.start();
 
@@ -142,26 +148,22 @@ public class RobotTemplate extends IterativeRobot {
        forward = 0;
        clockwise = 0;
        right = 0;
-       openC = true;
+       openC = false;
        openX = true;
        openY = false;
-       
-       
     }
     
     public void disabledPeriodic(){
        smartPush();
        smartPull();
-       
-        
-        forward = 0;
-        clockwise = 0;
-        right = 0;
+       forward = 0;
+       clockwise = 0;
+       right = 0;
     }
 
     public void sensorPrint() {
         readAll();
-        System.out.println(enY.get() + ", " + getAY());
+       
     }
 
     public void sensorTest() {
@@ -215,7 +217,7 @@ public class RobotTemplate extends IterativeRobot {
         joyX = joy.getX() * Math.abs(joy.getX());
 
         if (Math.abs(joy.getZ()) > .01) {
-            joyZ = joy.getZ() * Math.abs(joy.getZ());
+            joyZ = joy.getZ() * Math.abs(joy.getZ()) * Math.abs(joy.getZ());
             heading = theta;
             errorH = 0;
         } else { errorH = radRap(heading - theta) *KiR; }
@@ -237,17 +239,18 @@ public class RobotTemplate extends IterativeRobot {
         GZ = getGZ() * gScale;
 
         double VY = enY.getRate();
-        double AY = getAY() * aScale;// expected V range +/- maxXY
+        double AY = ad.getAcceleration(ADXL345_I2C.Axes.kY) / aScale;// expected V range +/- maxXY
         double VX = enX.getRate();
-        double AX = getAX() * aScale;	// expected A range +/- 28.6
+        double AX = ad.getAcceleration(ADXL345_I2C.Axes.kX) / aScale;	// expected A range +/- 28.6
 
         //adds to forward the amount in which we want to move in y direction in in/s
         //max velocity times amount requested (-1, 1), minus current speed
         //then, the derivative of the speed (acceleration) is added to to the value of forward 
         forward = clamp(forward);
-        forward = forward + KpY * (maxXY * joyY - VY) + KdY * AY;//PD expected range +/- 1.0
+        forward = forward + KpY * (maxXY * joyY - VY);//PD expected range +/- 1.0
+        System.out.println((maxXY * joyY) + ", " + (maxXY * joyY - VY));
         right = clamp(right);
-        right = right + KpX * (maxXY * joyX - VX) + KdX * AX;	//PD expected range +/- 0.577
+        right = right + KpX * (maxXY * joyX - VX) ;	//PD expected range +/- 0.577
         clockwise = clamp(clockwise);
         clockwise = clockwise + KpR * (6.28 * joyZ + GZ) + errorH; //replace 0 with KpR
 
@@ -280,8 +283,8 @@ public class RobotTemplate extends IterativeRobot {
         double ff, fc, fr;
 
         fc = openC ? oClock : clockwise;
-        ff = openY ? oForward : forward;
-        fr = openX ? oRight : right;
+        ff = openY ? oForward : forward - KdY * AY;
+        fr = openX ? oRight : right - KdX * AX ;
 
         lf = ff + fc + fr;
         rf = ff - fc - fr;
@@ -364,6 +367,9 @@ public class RobotTemplate extends IterativeRobot {
             openX = true;
             openY = true;
         }
+        SmartDashboard.getBoolean("openC", openC);
+        SmartDashboard.getBoolean("openX", openX);
+        SmartDashboard.getBoolean("openY", openY);
         
     }
 
@@ -439,6 +445,7 @@ public class RobotTemplate extends IterativeRobot {
     }
 
     public int byteCombo(byte num1, byte num2) { return ((num1 << 8) | num2 & 0x000000ff); }
+    public int byteComboTenBit(byte num1, byte num2) { return (((num1 << 8) & 0xF) | (num2 << 8)); }
 
     public double atan2(double y, double x) {
         double pi = Math.PI;
@@ -494,13 +501,26 @@ public class RobotTemplate extends IterativeRobot {
     double getCAngle() { return Math.toDegrees(atan2(getCY(), getCX())); }
     double getCRAngle() { return atan2(getCY(), getCX()); }
     double getCHRAngle() { return radRap(atan2(getCY(), getCX()) - initialHeading); }
-
+    
+    double getEnYD(){
+        currentVeloY = enY.getRate();
+        double s = currentVeloY-tempVeloHistoryY;
+        tempVeloHistoryY = currentVeloY;
+        return s;
+    }
+    double getEnXD(){
+        currentVeloX = enX.getRate();
+        double s = currentVeloX-tempVeloHistoryX;
+        tempVeloHistoryX = currentVeloX;
+        return s;
+    }
+    
     public double radRap(double d){ return (d> Math.PI) ? d-2*Math.PI : (d< -Math.PI) ? d+ 2*Math.PI : d; }
     double f(double t) {
         /* This provides 1/10 of a degree accuracy: */
         return -0.001096995 + t * (1.041963708 + t * (-0.196333807 + t * (-0.060821409)));
     }
-
+    
     int minVal(int newVal, int oldMin) { return (newVal < oldMin) ? newVal : oldMin; }
     int maxVal(int newVal, int oldMax) { return (newVal > oldMax) ? newVal : oldMax; }
 
@@ -534,9 +554,9 @@ public class RobotTemplate extends IterativeRobot {
         awrite = new I2C(DigitalModule.getInstance(1), 0xA6);
         aread = new I2C(DigitalModule.getInstance(1), 0xA7);
 
-        awrite.write(44, 0x09);
+        awrite.write(44, 0x0A);
         awrite.write(45, 0x08);
-        awrite.write(49, 0);
+        awrite.write(49, 0x08);
     }
 
     void turnToRight() {
